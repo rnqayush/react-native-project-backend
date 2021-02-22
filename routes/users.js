@@ -1,8 +1,11 @@
 const {User} = require('../models/user');
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const passport=require('passport')
+const GoogleStrategy=require('passport-google-oauth20')
 
 router.get(`/`, async (req, res) =>{
     const userList = await User.find().select('-passwordHash');
@@ -77,23 +80,24 @@ router.put('/:id',async (req, res)=> {
 })
 
 router.post('/login', async (req,res) => {
-    const user = await User.findOne({email: req.body.email})
+
+    const userP = await User.findOne({email: req.body.email})
     const secret = process.env.secret;
-    if(!user) {
+    if(!userP) {
         return res.status(400).send('The user not found');
     }
 
-    if(user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
+    if(userP && bcrypt.compareSync(req.body.password, userP.passwordHash)) {
         const token = jwt.sign(
             {
-                userId: user.id,
-                isAdmin: user.isAdmin
+                userId: userP.id,
+                isAdmin: userP.isAdmin
             },
             secret,
             {expiresIn : '1d'}
         )
        
-        res.status(200).send({user: user.email , token: token}) 
+        res.status(200).send({user: userP.email , token: token}) 
     } else {
        res.status(400).send('password is wrong!');
     }
@@ -102,25 +106,34 @@ router.post('/login', async (req,res) => {
 })
 
 
+
+
 router.post('/register', async (req,res)=>{
-    let user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        passwordHash: bcrypt.hashSync(req.body.password, 10),
-        phone: req.body.phone,
-        isAdmin: req.body.isAdmin,
-        street: req.body.street,
-        apartment: req.body.apartment,
-        zip: req.body.zip,
-        city: req.body.city,
-        country: req.body.country,
-    })
-    user = await user.save();
-
-    if(!user)
-    return res.status(400).send('the user cannot be created!')
-
-    res.send(user);
+    const userP = await User.findOne({email: req.body.email})
+    if(userP){
+        res.send(userP)
+    }
+    else{
+        let user = new User({
+            name: req.body.name,
+            email: req.body.email,
+            passwordHash: bcrypt.hashSync(req.body.password, 10),
+            phone: req.body.phone,
+            isAdmin: req.body.isAdmin,
+            street: req.body.street,
+            apartment: req.body.apartment,
+            zip: req.body.zip,
+            city: req.body.city,
+            country: req.body.country,
+        })
+        user = await user.save();
+    
+        if(!user)
+        return res.status(400).send('the user cannot be created!')
+    
+        res.send(user);
+    }
+    
 })
 
 
@@ -146,6 +159,34 @@ router.get(`/get/count`, async (req, res) =>{
         userCount: userCount
     });
 })
+
+
+
+
+// google
+
+
+passport.use(
+    new GoogleStrategy({
+        clientID:"388214865982-4kibuqqjd5fbjsog6idptf56gdsa96h9.apps.googleusercontent.com",
+        clientSecret:"ZSYJw86h7bZue_t0cIW7THZB",
+        callbackURL: "/api/v1/users/google/callback"
+    },
+    (accessToken,refreshToken,profile,done)=>{
+        console.log("access token",accessToken);
+        console.log("refresh token",refreshToken);
+        console.log("profile",profile);
+        console.log("done",done);
+    }
+    )
+)
+
+router.get('/auth/google',passport.authenticate('google',{
+    scope:['profile','email']
+}))
+
+router.get('/google/callback',passport.authenticate('google'))
+
 
 
 module.exports =router;
