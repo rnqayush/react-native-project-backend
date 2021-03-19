@@ -45,7 +45,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
     console.log(err);
 })
 
-const port=process.env.port||3000
+const port=process.env.PORT||3000
 //Server
 app.listen(port, ()=>{
 
