@@ -45,6 +45,10 @@ mongoose.connect(process.env.CONNECTION_STRING, {
     console.log(err);
 })
 
+app.get('/',(req,res)=>{
+res.send('your server is working correctly')
+})
+
 const port=process.env.PORT||3000
 //Server
 app.listen(port, ()=>{
