@@ -49,9 +49,8 @@ app.get('/',(req,res)=>{
 res.send('your server is working correctly')
 })
 
-const port=process.env.PORT||3000
 //Server
-app.listen(port, ()=>{
+app.listen(3000, ()=>{
 
     console.log('server is running http://localhost:3000');
 })
